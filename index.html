@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pertanyaan Buat Kamu</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=Young+Serif&display=swap">
+<style>
+/* Layout: satu layar penuh per pertanyaan. Teks besar rata kiri di atas, tombol Iya selebar layar di bawahnya, tombol Tidak kabur-kaburan di area kosong di bawah Iya. Ukuran dibuat besar untuk layar HP. */
+:root {
+  --bg: #FBEEF0;
+  --fg: #2B1620;
+  --muted: #7A5963;
+  --accent: #D92D4B;
+  --on-accent: #FFFFFF;
+  --line: #EBCFD5;
+  --soft: #F6D5DB;
+  --font-display: "Young Serif", Georgia, "Times New Roman", serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1D0E15;
+    --fg: #FBE8EC;
+    --muted: #C39AA6;
+    --accent: #FF5F7A;
+    --on-accent: #2B0A14;
+    --line: #432533;
+    --soft: #3A1A27;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1D0E15;
+  --fg: #FBE8EC;
+  --muted: #C39AA6;
+  --accent: #FF5F7A;
+  --on-accent: #2B0A14;
+  --line: #432533;
+  --soft: #3A1A27;
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 1.125rem;
+  line-height: 1.5;
+  padding-block: 20px;
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+*, *::before, *::after { box-sizing: border-box; }
+
+#app {
+  min-height: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.count {
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.dots { display: flex; gap: 6px; }
+.dot { width: 24px; height: 5px; border-radius: 3px; background: var(--line); transition: background 0.3s; }
+.dot.on { background: var(--accent); }
+
+.stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  min-width: 0;
+}
+.q {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.2rem, 10.5vw, 3.5rem);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  margin: 0;
+}
+.hint { margin: 0; min-height: 1.5em; color: var(--muted); font-size: 1.0625rem; }
+
+.stage.in { animation: slide-in 0.35s ease-out both; }
+.stage.out { opacity: 0; transform: translateX(-28px); transition: opacity 0.2s, transform 0.2s; }
+@keyframes slide-in { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+
+.actions {
+  position: relative;
+  height: 280px;
+  height: clamp(250px, 42dvh, 360px);
+}
+.btn {
+  font: inherit;
+  font-weight: 700;
+  font-size: 1.25rem;
+  border-radius: 999px;
+  cursor: pointer;
+  border: 2px solid var(--accent);
+  padding: 20px 32px;
+  min-height: 64px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
+.yes {
+  display: block;
+  width: 100%;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.no {
+  position: absolute;
+  left: 0;
+  top: 100px;
+  background: transparent;
+  color: var(--accent);
+  white-space: nowrap;
+  max-width: 100%;
+  transition: transform 0.28s cubic-bezier(.3,1.4,.5,1);
+}
+.no.is-yes { background: var(--soft); border-color: var(--soft); color: var(--fg); }
+
+.done { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 20px; }
+.done .tally {
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.done h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 12vw, 4rem);
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.done p { margin: 0; max-width: 28rem; font-size: 1.25rem; }
+.done .sig { color: var(--muted); font-size: 1.0625rem; }
+
+.hearts { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
+.heart {
+  position: absolute;
+  bottom: -48px;
+  color: var(--accent);
+  opacity: 0;
+  animation: float var(--dur) linear var(--delay) infinite;
+}
+.heart svg { width: 100%; height: 100%; display: block; fill: currentColor; }
+@keyframes float {
+  0% { transform: translateY(0) rotate(-8deg); opacity: 0; }
+  12% { opacity: 0.85; }
+  100% { transform: translateY(-115vh) rotate(10deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage.in { animation: none; }
+  .stage.out, .no { transition: none; }
+  .hearts { display: none; }
+}
+</style>
+<style>
+body { padding-top: max(20px, env(safe-area-inset-top, 0px)); padding-bottom: max(20px, env(safe-area-inset-bottom, 0px)); }
+</style>
+</head>
+<body>
+<main id="app">
+  <header class="top" id="top">
+    <span class="count" id="count"></span>
+    <div class="dots" id="dots" aria-hidden="true"></div>
+  </header>
+
+  <section class="stage in" id="stage" aria-live="polite">
+    <h1 class="q" id="q"></h1>
+    <p class="hint" id="hint"></p>
+  </section>
+
+  <div class="actions" id="actions">
+    <button class="btn yes" id="yes" type="button">Iya</button>
+    <button class="btn no" id="no" type="button">Tidak</button>
+  </div>
+
+  <section class="done" id="done" hidden>
+    <span class="tally" id="tally"></span>
+    <h1 id="doneTitle"></h1>
+    <p id="doneText"></p>
+    <p class="sig" id="doneSig"></p>
+  </section>
+</main>
+
+<div class="hearts" id="hearts" aria-hidden="true"></div>
+
+<script>
+(function () {
+  // Ubah bagian ini untuk menyesuaikan isi.
+  var HER = "Sayang";
+  var QUESTIONS = [
+    { q: "Hai, " + HER + ". Ada beberapa pertanyaan buat kamu. Siap?", yes: "Siap", give: "Yaudah, siap" },
+    { q: "Kamu tau ga, kamu cantik banget hari ini?", yes: "Tau dong", give: "Yaudah, iya" },
+    { q: "Kamu senang ga kalau lagi sama aku?", yes: "Senang", give: "Yaudah, senang" },
+    { q: "Pernah kepikiran ga, kita ini cocok banget?", yes: "Pernah", give: "Yaudah, pernah" },
+    { q: "Boleh ga aku jujur soal sesuatu?", yes: "Boleh", give: "Yaudah, boleh" },
+    { q: "Aku sayang kamu. Mau terus sama aku?", yes: "Mau", give: "Yaudah, mau" }
+  ];
+  var DONE_TITLE = "Makasih ya, " + HER + ".";
+  var DONE_TEXT = "Aku sayang kamu, dan aku senang banget kamu jawab iya.";
+  var DONE_SIG = "Dari aku, buat kamu.";
+
+  var NO_LABELS = ["Tidak", "Yakin?", "Beneran?", "Coba pikir lagi", "Hmm..."];
+  var HINTS = ["", "Tombolnya kabur ya.", "Jangan dikejar, pencet Iya aja.", "Tinggal satu tombol yang bisa dipencet.", "Dikit lagi, tombolnya nyerah."];
+  var GIVE_UP = 5;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var stage = $("stage"), qEl = $("q"), hint = $("hint"), yes = $("yes"), no = $("no");
+  var actions = $("actions"), count = $("count"), dots = $("dots");
+
+  var i = 0, tries = 0, gaveUp = false, lastDodge = 0, busy = false;
+
+  for (var d = 0; d < QUESTIONS.length; d++) {
+    var dot = document.createElement("span");
+    dot.className = "dot";
+    dots.appendChild(dot);
+  }
+
+  function render() {
+    var item = QUESTIONS[i];
+    tries = 0;
+    gaveUp = false;
+    qEl.textContent = item.q;
+    hint.textContent = "";
+    yes.textContent = item.yes;
+    yes.style.paddingBlock = "";
+    no.textContent = NO_LABELS[0];
+    no.style.transform = "none";
+    no.classList.remove("is-yes");
+    count.textContent = "Pertanyaan " + (i + 1) + " dari " + QUESTIONS.length;
+    var all = dots.children;
+    for (var k = 0; k < all.length; k++) all[k].classList.toggle("on", k <= i);
+  }
+
+  function replay() {
+    stage.classList.remove("in");
+    void stage.offsetWidth;
+    stage.classList.add("in");
+  }
+
+  function advance() {
+    if (busy) return;
+    busy = true;
+    stage.classList.add("out");
+    setTimeout(function () {
+      stage.classList.remove("out");
+      if (i + 1 >= QUESTIONS.length) {
+        finish();
+      } else {
+        i++;
+        render();
+        replay();
+      }
+      busy = false;
+    }, 210);
+  }
+
+  function dodge() {
+    var now = Date.now();
+    if (now - lastDodge < 300) return;
+    lastDodge = now;
+    tries++;
+    if (tries >= GIVE_UP) {
+      gaveUp = true;
+      no.classList.add("is-yes");
+      no.style.transform = "none";
+      no.textContent = QUESTIONS[i].give;
+      hint.textContent = HINTS[HINTS.length - 1];
+      yes.style.paddingBlock = "";
+      return;
+    }
+    no.textContent = NO_LABELS[Math.min(tries, NO_LABELS.length - 1)];
+    hint.textContent = HINTS[Math.min(tries, HINTS.length - 2)];
+    // Tombol Iya makin tebal, tapi tetap selebar layar.
+    yes.style.paddingBlock = (20 + Math.min(tries, 4) * 7) + "px";
+
+    var box = actions.getBoundingClientRect();
+    var yr = yes.getBoundingClientRect();
+    var bw = no.offsetWidth, bh = no.offsetHeight;
+    var best = null;
+    for (var n = 0; n < 30; n++) {
+      var l = Math.random() * Math.max(0, box.width - bw);
+      var t = Math.random() * Math.max(0, box.height - bh);
+      var cand = { l: l, t: t };
+      var left = box.left + l, top = box.top + t;
+      var hit = !(left + bw < yr.left - 10 || left > yr.right + 10 || top + bh < yr.top - 10 || top > yr.bottom + 10);
+      if (!best) best = cand;
+      if (!hit) { best = cand; break; }
+    }
+    no.style.transform = "translate(" + (best.l - no.offsetLeft) + "px," + (best.t - no.offsetTop) + "px)";
+  }
+
+  yes.addEventListener("click", advance);
+  no.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse" && !gaveUp) dodge(); });
+  no.addEventListener("pointerdown", function (e) { if (!gaveUp) { e.preventDefault(); dodge(); } });
+  no.addEventListener("click", function () { if (gaveUp) advance(); else dodge(); });
+
+  function finish() {
+    $("top").hidden = true;
+    stage.hidden = true;
+    actions.hidden = true;
+    $("tally").textContent = QUESTIONS.length + " dari " + QUESTIONS.length + " jawabannya: Iya";
+    $("doneTitle").textContent = DONE_TITLE;
+    $("doneText").textContent = DONE_TEXT;
+    $("doneSig").textContent = DONE_SIG;
+    $("done").hidden = false;
+    hearts();
+  }
+
+  function hearts() {
+    var wrap = $("hearts");
+    var path = "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z";
+    for (var h = 0; h < 22; h++) {
+      var el = document.createElement("span");
+      var size = 16 + Math.random() * 24;
+      el.className = "heart";
+      el.style.left = Math.random() * 94 + "%";
+      el.style.width = size + "px";
+      el.style.height = size + "px";
+      el.style.setProperty("--dur", 6 + Math.random() * 6 + "s");
+      el.style.setProperty("--delay", -Math.random() * 8 + "s");
+      el.innerHTML = '<svg viewBox="0 0 24 24"><path d="' + path + '"/></svg>';
+      wrap.appendChild(el);
+    }
+  }
+
+  render();
+})();
+</script>
+
+</body>
+</html>
